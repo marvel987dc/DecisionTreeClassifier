@@ -3,6 +3,7 @@ from xml.etree.ElementInclude import include
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from dask.array.random import random
 from networkx.algorithms.isomorphism import numerical_multiedge_match
 from nltk import entropy
 from sklearn.compose import ColumnTransformer
@@ -11,6 +12,7 @@ from win32comext.adsi.demos.scp import verbose
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
+from sklearn.model_selection import  train_test_split
 
 data_Juan = pd.read_csv('./Data/student-por.csv', delimiter = ';')
 
@@ -87,3 +89,21 @@ pipeline_Juan = Pipeline([
 # Verify the pipeline steps
 print("Pipeline steps:")
 print(pipeline_Juan.named_steps)
+
+seed = 53
+
+# 11. Split the data (features_Juan and target_variable_Juan from earlier steps)
+X_train_Juan, X_test_Juan, y_train_Juan, y_test_Juan = train_test_split(
+    features_Juan,
+    target_variables_Juan,
+    test_size = 0.2,
+    random_state = seed,  # my student ID's last two digits (53)
+    stratify=target_variables_Juan
+)
+
+print(f"Training set: {X_train_Juan.shape[0]} samples")
+print(f"Test set: {X_test_Juan.shape[0]} samples")
+print("\nClass distribution in y_train:")
+print(y_train_Juan.value_counts(normalize=True))
+print("\nClass distribution in y_test:")
+print(y_test_Juan.value_csounts(normalize=True))
