@@ -6,9 +6,11 @@ import seaborn as sns
 from networkx.algorithms.isomorphism import numerical_multiedge_match
 from nltk import entropy
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from win32comext.adsi.demos.scp import verbose
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.svm import SVC
 
 data_Juan = pd.read_csv('./Data/student-por.csv', delimiter = ';')
 
@@ -75,3 +77,9 @@ clf_Juan = DecisionTreeClassifier(
 #parameters verification
 print("Decision Tree parameters:")
 print(clf_Juan.get_params())
+
+#Pipeline Creation
+pipeline_Juan = Pipeline(
+    ('preprocessing', transformer_Juan),
+    ('classifier', clf_Juan)
+)
