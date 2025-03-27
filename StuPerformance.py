@@ -79,7 +79,11 @@ print("Decision Tree parameters:")
 print(clf_Juan.get_params())
 
 #Pipeline Creation
-pipeline_Juan = Pipeline(
+pipeline_Juan = Pipeline([
     ('preprocessing', transformer_Juan),
     ('classifier', clf_Juan)
-)
+])
+
+# Verify the pipeline steps
+print("Pipeline steps:")
+print(pipeline_Juan.named_steps)
