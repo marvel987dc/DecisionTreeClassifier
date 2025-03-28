@@ -4,15 +4,17 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from dask.array.random import random
+from mkl_random.mklrand import shuffle
 from networkx.algorithms.isomorphism import numerical_multiedge_match
 from nltk import entropy
+from pandas.core.common import random_state
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from win32comext.adsi.demos.scp import verbose
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
-from sklearn.model_selection import  train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score, cross_validate, StratifiedKFold
 
 data_Juan = pd.read_csv('./Data/student-por.csv', delimiter = ';')
 
@@ -101,9 +103,34 @@ X_train_Juan, X_test_Juan, y_train_Juan, y_test_Juan = train_test_split(
     stratify=target_variables_Juan
 )
 
+#verifying the shapes
 print(f"Training set: {X_train_Juan.shape[0]} samples")
 print(f"Test set: {X_test_Juan.shape[0]} samples")
 print("\nClass distribution in y_train:")
 print(y_train_Juan.value_counts(normalize=True))
 print("\nClass distribution in y_test:")
-print(y_test_Juan.value_csounts(normalize=True))
+print(y_test_Juan.value_counts(normalize=True))
+
+#fitting the pipeline to the training data
+pipeline_Juan.fit(X_train_Juan, y_train_Juan)
+
+seed=53
+#create Stratified k-fold object with shuffling
+cv_strategy = StratifiedKFold(n_splits=10, shuffle=True, random_state=seed)
+
+# Perform cross-validation
+scores = cross_validate(
+    estimator=pipeline_Juan,
+    X=X_train_Juan,
+    y=y_train_Juan,
+    cv=cv_strategy,
+    scoring='accuracy',
+    return_train_score=True,
+    n_jobs=1
+)
+
+#printing the mean of the 10 fold cross validation
+print("\nAverage test accuracy: ", scores['test_score'].mean())
+print("Standard Deviation: ", scores['test_score'].std())
+
+
