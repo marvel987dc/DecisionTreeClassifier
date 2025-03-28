@@ -6,6 +6,8 @@ import pandas as pd
 import seaborn as sns
 from dask.array.random import random
 from intake.source.cache import display
+from joblib import dump
+from joblib.testing import param
 from mkl_random.mklrand import shuffle
 from networkx.algorithms.isomorphism import numerical_multiedge_match
 from nltk import entropy, precision, recall
@@ -18,8 +20,9 @@ from win32comext.adsi.demos.scp import verbose
 from sklearn.tree import DecisionTreeClassifier, export_graphviz
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
-from sklearn.model_selection import train_test_split, cross_val_score, cross_validate, StratifiedKFold
-from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
+from sklearn.model_selection import train_test_split, cross_val_score, cross_validate, StratifiedKFold, \
+    RandomizedSearchCV
+from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix, classification_report
 import graphviz
 
 data_Juan = pd.read_csv('./Data/student-por.csv', delimiter = ';')
@@ -192,3 +195,45 @@ print(f"Precision Score: {precision: .3f}")
 print(f"Recall Sore: {recall: .3f}")
 print(f"Confusion Matrix: {conf_matrix}")
 
+## 20. Randomized Grid Search for hyperparameter tuning
+parameters={
+    'classifier__min_samples_split' : range(10,300,20),
+    'classifier__max_depth': range(1,30,2),
+    'classifier__min_samples_leaf':range(1,15,3)
+}
+
+random_search_Juan = RandomizedSearchCV(
+    estimator=pipeline_Juan,
+    param_distributions=parameters,
+    n_iter=7,
+    scoring='accuracy',
+    cv=5,
+    refit=True,
+    verbose=3,
+    random_state=53,
+)
+
+# Fitting the training Data to the grid search object
+random_search_Juan.fit(X_train_Juan, y_train_Juan)
+
+#pritn the results
+print("Best parameters:", random_search_Juan.best_params_)
+print("Best cross-validation accuracy: {:.3f}".format(random_search_Juan.best_score_))
+print("Best estimator: ", random_search_Juan.best_estimator_)
+
+
+best_model = random_search_Juan.best_estimator_
+
+#printing the accuracy score of the tunned model and the classification report
+y_pred = best_model.predict(X_test_Juan)
+test_accuracy = accuracy_score(y_test_Juan, y_pred)
+
+print(f"Test Accuracy: {test_accuracy:.3f}")
+print("\nClassification Report:")
+print(classification_report(y_test_Juan, y_pred))
+
+#saving the model using joblib
+decision_tree_model = random_search_Juan.best_estimator_.named_steps['classifier']
+
+dump(decision_tree_model, 'decision_tree_model_Juan.pkl')
+print("Decision Tree model saved as 'decision_tree_model_Juan.pkl'")
