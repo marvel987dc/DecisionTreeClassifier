@@ -1,20 +1,26 @@
+import os
 from xml.etree.ElementInclude import include
 
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from dask.array.random import random
+from intake.source.cache import display
 from mkl_random.mklrand import shuffle
 from networkx.algorithms.isomorphism import numerical_multiedge_match
-from nltk import entropy
+from nltk import entropy, precision, recall
+from numba.pycc import export
 from pandas.core.common import random_state
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sqlalchemy.util import decode_slice
 from win32comext.adsi.demos.scp import verbose
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier, export_graphviz
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split, cross_val_score, cross_validate, StratifiedKFold
+from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
+import graphviz
 
 data_Juan = pd.read_csv('./Data/student-por.csv', delimiter = ';')
 
@@ -133,4 +139,56 @@ scores = cross_validate(
 print("\nAverage test accuracy: ", scores['test_score'].mean())
 print("Standard Deviation: ", scores['test_score'].std())
 
+#Visualize The decision Tree
+#add Graphviz to the system path
+os.environ["PATH"] += os.pathsep + r'C:\Anaconda3\Library\bin\graphviz'
+
+#EXTRACT THE TRAINED TREE FROM YOUR PIPELINE
+decision_tree = pipeline_Juan.named_steps['classifier']
+
+#export to DOT format
+dot_data = export_graphviz(
+    decision_tree,
+    out_file=None,
+    feature_names=pipeline_Juan.named_steps['preprocessing'].get_feature_names_out(),
+    class_names=['Fail', 'Pass'],
+    filled=True,
+    rounded=True,
+    special_characters=True,
+    proportion=True
+)
+
+#Create and render graph
+graph = graphviz.Source(dot_data)
+graph.render(filename='decision_tree_Juan', format='png', cleanup=True)
+print("Decision tree visualization saved as 'decision_tree_Juan.png'")
+
+#display as a pdf
+# graph.view()
+
+#calculate training set accuracy
+y_train_pred = pipeline_Juan.predict(X_train_Juan)
+train_accuracy = accuracy_score(y_train_Juan, y_train_pred)
+
+#calculate test set accuracy
+y_test_pred = pipeline_Juan.predict(X_test_Juan)
+test_accuracy = accuracy_score(y_test_Juan, y_test_pred)
+
+#print the accuracies for train and test
+print(f"\nTraining accuracy: {train_accuracy: .3f}")
+print(f"Testing accuracy: {test_accuracy: .3f}")
+
+#Generate prediction
+y_pred = pipeline_Juan.predict(X_test_Juan)
+
+#calculating the metrics
+accuracy = accuracy_score(y_test_Juan, y_pred)
+precision = precision_score(y_test_Juan, y_pred)
+recall = recall_score(y_test_Juan, y_pred)
+conf_matrix = confusion_matrix(y_test_Juan, y_pred)
+
+print(f"\nAccuracy score: {accuracy: .3f}")
+print(f"Precision Score: {precision: .3f}")
+print(f"Recall Sore: {recall: .3f}")
+print(f"Confusion Matrix: {conf_matrix}")
 
